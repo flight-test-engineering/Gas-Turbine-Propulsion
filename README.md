@@ -1,4 +1,6 @@
 # Gas-Turbine-Propulsion
 Gas Turbine / Engine Deck in Python for use in flight test.
 
-This repo contains the files used in the Gas Turbine Propulsion series.
+The "turbojet" directory contains the files used in the Jet Engine video series, where a simple turbojet engine model is developed.
+
+
