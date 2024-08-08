@@ -1,12 +1,23 @@
 import numpy as np
 
+'''
+module to calculate ISA atmosphere and speed conversions
+change log:
+v0: initial release, ISA only
+v1: added speed conversions
+'''
 
 
 # constants
-R = 287.053 # [m2/s2/K]
-g_SL = 9.80665 # [m/s2]
+R_star = 8.31432 * 1E-3 # N*m/(kmol K) -> ISA page 2
+Mol_W_0 = 28.9644 #kg/kmol -> ISA page 9
+R = 287.053 # R_star/Mol_W_0 [m2/s2/K]
+gamma = 1.4 # for air -> ISA page 4
+g_SL = 9.80665 # [m/s2] -> ISA page 2
 m2ft = 3.28084
 ft2m = 1 / m2ft
+kt2ms = 0.5144
+ms2kt = 1 / kt2ms
 
 # define strata
 
@@ -16,6 +27,7 @@ Hc_t_tropo = 36089.24 # [ft]
 T_SL = 288.15 # [K]
 p_SL = 101325 # [Pa]
 rho_SL = 1.225 # [kg/m3]
+a_SL = np.sqrt(gamma * R * T_SL) # speed of sound at sea level [m/s]
 
 # stratosphere
 Hc_b_strato = Hc_t_tropo + 0.01 # [ft]
@@ -196,3 +208,158 @@ def inv_rho(rho:float)->float:
     '''
 
     return inv_sigma(rho / rho_SL)
+
+def Vc2M(Vc, Hc):
+    '''
+    this function calculates Mach number for a given calibrated airspeed and altitude
+    inputs:
+        Vc: calibrated airspeed in kts
+        Hc: calibrated altitude in ft
+    outputs:
+        Mach number
+    '''
+    d = delta(Hc)
+    M = np.sqrt(5 * (((1 / d) * ((1 + 0.2 * ((Vc * kt2ms) / a_SL)**2)**(7/2) - 1) + 1)**(2/7) - 1))
+    return M
+
+def M2Vc(M, Hc):
+    '''
+    this function calculates calibrated airspeed from a given Mach and altitude
+    inputs:
+        Mach number
+        Hc: calibrated altitude in ft
+    outputs:
+        Vc: calibrated airspeed in kts
+    '''
+    d = delta(Hc)
+    Vc = (a_SL * np.sqrt(5 * (((d * ((1 + 0.2 * M**2)**(7/2) - 1)) + 1)**(2/7) - 1))) * ms2kt
+    return Vc
+
+def Vt2Ve(Vt, Hc):
+    '''
+    this function calculates equivalent airspeed from a given true and altitude
+    inputs:
+        Vt: true airspeed in kts
+        Hc: calibrated altitude in ft
+    outputs:
+        Ve: equivalent airspeed in kts
+    '''
+    s = sigma(Hc)
+    return Vt * np.sqrt(s)
+
+def Ve2Vt(Ve, Hc):
+    '''
+    this function calculates true airspeed from a given equivalent and altitude
+    inputs:
+        Ve: equivalent airspeed in kts
+        Hc: calibrated altitude in ft
+    outputs:
+        Vt: true airspeed in kts
+    '''
+    s = sigma(Hc)
+    return Ve / np.sqrt(s)
+
+def M2Ve(M, Hc):
+    '''
+    this function calculates equivalent airspeed from a given Mach and altitude
+    inputs:
+        Mach number
+        Hc: calibrated altitude in ft
+    outputs:
+        Vc: calibrated airspeed in kts
+    '''
+    Pt_Pa_over_Pa = (1 + 0.2 * M**2)**(7/2) - 1
+    Pa = p(Hc)
+    Ve = np.sqrt((1 / rho_SL) * (7 * Pa * ((Pt_Pa_over_Pa + 1)**(2/7) - 1)))
+    return Ve * ms2kt
+
+def M2Vt(M, Hc):
+    '''
+    this function calculates true airspeed from a given Mach and altitude
+    inputs:
+        Mach number
+        Hc: calibrated altitude in ft
+    outputs:
+        Vc: calibrated airspeed in kts
+    '''
+    Pt_Pa_over_Pa = (1 + 0.2 * M**2)**(7/2) - 1
+    Pa = p(Hc)
+    Ve = np.sqrt((1 / rho_SL) * (7 * Pa * ((Pt_Pa_over_Pa + 1)**(2/7) - 1)))
+    return Ve2Vt(Ve * ms2kt, Hc)
+
+def Vt2M(Vt, Hc):
+    '''
+    this function calculates Mach from a given true and altitude
+    inputs:
+        Vt: true airspeed in kts
+        Hc: calibrated altitude in ft
+    outputs:
+        M: Mach number
+    '''
+    return Vt / (np.sqrt(gamma * R * T(Hc)) * ms2kt)
+
+def Vt2Vc(Vt, Hc):
+    '''
+    this function calculates calibrated airspeed from a given true and altitude
+    inputs:
+        Vt: true airspeed in kts
+        Hc: calibrated altitude in ft
+    outputs:
+        Vc: calibrated airspeed in kts
+    '''
+    M = Vt2M(Vt, Hc)
+    Vc = M2Vc(M, Hc)
+    return Vc
+
+def Vc2Vt(Vc, Hc):
+    '''
+    this function calculates true airspeed from a given calibrated and altitude
+    inputs:
+        Vc: calibrated airspeed in kts
+        Hc: calibrated altitude in ft
+    outputs:
+        Vt: true airspeed in kts
+    '''
+    M = Vc2M(Vc, Hc)
+    Vt = M2Vt(M, Hc)
+    return Vt
+
+def Vc2Ve(Vc, Hc):
+    '''
+    this function calculates equivalent airspeed from a given calibrated and altitude
+    inputs:
+        Vc: calibrated airspeed in kts
+        Hc: calibrated altitude in ft
+    outputs:
+        Ve: equivalent airspeed in kts
+    '''
+    M = Vc2M(Vc, Hc)
+    Ve = M2Ve(M, Hc)
+    return Ve
+
+def Ve2Vc(Ve, Hc):
+    '''
+    this function calculates calibrated airspeed from a given equivalent and altitude
+    inputs:
+        Ve: equivalent airspeed in kts
+        Hc: calibrated altitude in ft
+    outputs:
+        Vc: calibrated airspeed in kts
+    '''
+    Vt = Ve2Vt(Ve, Hc)
+    M = Vt2M(Vt, Hc)
+    Vc = M2Vc(M, Hc)
+    return Vc
+
+def Ve2M(Ve, Hc):
+    '''
+    this function calculates Mach number from a given equivalent and altitude
+    inputs:
+        Ve: equivalent airspeed in kts
+        Hc: calibrated altitude in ft
+    outputs:
+        M: Mach number
+    '''
+    Vt = Ve2Vt(Ve, Hc)
+    M = Vt2M(Vt, Hc)
+    return M
