@@ -13,6 +13,7 @@ Or each link below to directly to the corresponding episode:
 * [Episode 7 - Turbine Thermodynamics and Python coding](https://youtu.be/od25MaoVDtY) / associated file: "episd_7_turbine.ipynb"
 * [Episode 8 - Nozzle Thermodynamics and Python Coding](https://youtu.be/kFN3PbblPc8) / associated file: "episd_8_nozzle.ipynb"
 * [Episode 9 - Complete Engine Python Coding](https://youtu.be/uvJI9kEFMcw) / associated file: "episd_9_mass_flow.ipynb"
+* [Episode 10 - Implementing a Temperature Limiter](https://youtu.be/-nizywfGBkw) / associated file: "episd_10_limit_T.ipynb"
 
 File "requirements.txt" has all dependencies needed to run these notebooks.
 
